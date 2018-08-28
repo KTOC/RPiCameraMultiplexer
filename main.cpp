@@ -4,8 +4,12 @@
 #include <stdint.h>
 #include <bits/stdc++.h>
 
+/* Logger */
+#include "spdlog/spdlog.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+
 /* GPIO */
-#include "wiringPi.h"
+#include "wiringPi/wiringPi.h"
 /* Image processing */
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -29,6 +33,10 @@ using namespace cv;
 
 /* current camera used to capture */
 int current_cam = 1;
+
+/* Logger instance - multi-threaded */
+auto console = spdlog::stdout_color_mt("");
+
 
 /* Used to switch between cameras 1-4 */
 static inline void select_camera(int camera)
@@ -156,7 +164,7 @@ int main(int argc, char** argv)
     VideoCapture cap(0);
     if (!cap.isOpened())
     {
-        cout << "Cannot open camera" << endl;
+        console->error("Cannot open camera");
         return -1;
     }
     
@@ -175,7 +183,6 @@ int main(int argc, char** argv)
     
     while (1)
     {
-        
         Mat frame;
         if (!cap.read(frame))
         {
