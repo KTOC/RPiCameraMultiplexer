@@ -45,6 +45,8 @@
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="/home/curiosul/Workspaces/CPP/RPiCameraMultiplexer/include"/>
+					<Add directory="/usr/local/include/opencv"/>
+					<Add directory="/usr/local/include/opencv2"/>
 					<Add directory="/usr/include/c++/5"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
 					<Add directory="/usr/include/c++/5/backward"/>
@@ -69,6 +71,8 @@
 				<Option compiler="gcc"/>
 				<Compiler>
 					<Add directory="/home/curiosul/Workspaces/CPP/RPiCameraMultiplexer/include"/>
+					<Add directory="/usr/local/include/opencv"/>
+					<Add directory="/usr/local/include/opencv2"/>
 					<Add directory="/usr/include/c++/5"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/5"/>
 					<Add directory="/usr/include/c++/5/backward"/>

@@ -1,1 +1,1 @@
-/usr/bin/c++  -g   CMakeFiles/RPiCameraMultiplexer.dir/main.cpp.o  -o RPiCameraMultiplexer 
+/usr/bin/c++  -g   CMakeFiles/RPiCameraMultiplexer.dir/main.cpp.o  -o RPiCameraMultiplexer  -L/usr/local/lib -Wl,-rpath,/usr/local/lib -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_ml -lopencv_videoio -lopencv_features2d -lopencv_calib3d -lopencv_objdetect -lopencv_stitching -lwiringPi 

@@ -83,7 +83,7 @@ static inline void select_camera(int camera)
         
         default: /* Throw error if camera is invalid */
         {
-            cout << "Invalid camera selected! (" << camera << ")" <<  endl;
+            console->error("Invalid camera selected: {}", camera);
             exit(-1);
         }
     }
@@ -103,13 +103,13 @@ static inline void reset_cams()
 
 int init()
 {
-    cout << "Initializing gpio..." << endl;
+    console->info("Initializing gpio...");
     
     /* wirepi init */
     if(wiringPiSetupGpio() != 0)
         //if(wiringPiSetupSys () != 0)
     {
-        cout << "Failed to initialize GPIO pins!" << endl;
+        console->error("Failed to initialize GPIO pins!");
         return -1;
     }
     
@@ -161,16 +161,9 @@ int main(int argc, char** argv)
         return -1;
     }
     
-    VideoCapture cap(0);
-    if (!cap.isOpened())
-    {
-        console->error("Cannot open camera");
-        return -1;
-    }
-    
-    /* Capture resolution */
-    cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+
+//    cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
+//    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
     
     /* Create different windows for every camera */
     namedWindow("Camera_1", CV_WINDOW_AUTOSIZE);
@@ -181,17 +174,28 @@ int main(int argc, char** argv)
     unsigned long f = 0;
     auto start = steady_clock::now();
     
-    while (1)
+    while (true)
     {
+        static VideoCapture cap(0);
+        if (!cap.isOpened())
+        {
+            console->error("Cannot open camera");
+            return -1;
+        }
+    
+        /* Capture resolution */
+        cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+        cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+        
         Mat frame;
         if (!cap.read(frame))
         {
-            cout << "Cannot read a frame from camera" << endl;
+            console->error("Cannot read a frame from camera");
             continue;
         }
         
         /* Enable next camera and in the meanwhile display current frame */
-        //select_camera(++current_cam);
+        select_camera(++current_cam);
         
         auto elapse = duration_cast<seconds>(steady_clock::now() - start).count();
         ++f;
@@ -201,6 +205,8 @@ int main(int argc, char** argv)
             cout << "fps: " << fps << ", total frames: " << f
                  << " elapsed time: " << elapse << "s\n";
         }
+        
+        //cap.release();
         
         imshow( ("Camera_" + std::to_string(current_cam)) , frame);
         

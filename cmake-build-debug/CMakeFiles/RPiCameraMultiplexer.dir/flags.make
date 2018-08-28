@@ -6,5 +6,5 @@ CXX_FLAGS = -g   -std=gnu++11
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/curiosul/Workspaces/CPP/RPiCameraMultiplexer/include 
+CXX_INCLUDES = -I/home/curiosul/Workspaces/CPP/RPiCameraMultiplexer/include -I/usr/local/include/opencv -I/usr/local/include/opencv2 
 
