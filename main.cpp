@@ -35,11 +35,7 @@ using namespace cv;
 int current_cam = 1;
 
 /* Logger instance - multi-threaded */
-<<<<<<< HEAD
 auto console = spdlog::stdout_color_mt("Console");
-=======
-auto console = spdlog::stdout_color_mt("");
->>>>>>> d66b0afdd4891d0d388a7da8bf4d07b5f5d80456
 
 
 /* Used to switch between cameras 1-4 */
@@ -168,10 +164,6 @@ int main(int argc, char **argv)
     {
         return -1;
     }
-<<<<<<< HEAD
-=======
-    
->>>>>>> d66b0afdd4891d0d388a7da8bf4d07b5f5d80456
 
 //    cap.set(CV_CAP_PROP_FRAME_WIDTH, 320);
 //    cap.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
@@ -193,10 +185,7 @@ int main(int argc, char **argv)
             console->error("Cannot open camera");
             return -1;
         }
-<<<<<<< HEAD
-=======
-    
->>>>>>> d66b0afdd4891d0d388a7da8bf4d07b5f5d80456
+
         /* Capture resolution */
         cap.set(CV_CAP_PROP_FRAME_WIDTH, 640);
         cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
@@ -218,13 +207,8 @@ int main(int argc, char **argv)
         
         //cap.release();
         
-<<<<<<< HEAD
         imshow(("Camera_" + std::to_string(current_cam)), frame);
-=======
-        //cap.release();
-        
-        imshow( ("Camera_" + std::to_string(current_cam)) , frame);
->>>>>>> d66b0afdd4891d0d388a7da8bf4d07b5f5d80456
+        // https://codeyarns.com/2015/09/14/how-to-show-images-in-split-window-in-opencv/
         
         if (waitKey(30) == 27)
         {
