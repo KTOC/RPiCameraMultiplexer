@@ -21,9 +21,11 @@ using namespace chrono;
 using namespace cv;
 
 /* Enable GUI interface */
-#define GUI_SUPPORT
+//#define GUI_SUPPORT
 /* Window name */
 #define GUI_WINDOW_NAME "Stream"
+/* Maximum FPS */
+#define MAX_FPS         90
 /* Define frames dimensions */
 #define FRAME_WIDTH     640
 #define FRAME_HEIGHT    480
@@ -242,29 +244,35 @@ cv::Mat makeCanvas(std::vector<cv::Mat> &vecMat, int windowHeight, int nRows)
     return canvasImage;
 }
 
-int main(int argc, char **argv)
+VideoCapture NewCameraInstance()
 {
-    if (init() != 0)
-    {
-        return -1;
-    }
-    
-    VideoCapture cap(0);
-    if (!cap.isOpened())
+    VideoCapture cap;
+    if (!cap.open(0))
     {
         console->error("Cannot open camera");
-        return -1;
+        return cap;
     }
     
     /* Capture resolution */
+    if(!cap.set(cv::CAP_PROP_FPS, MAX_FPS)) console->warn("Failed to set {} fps", MAX_FPS);
     if(!cap.set(cv::CAP_PROP_FRAME_WIDTH, FRAME_WIDTH))  console->warn("Failed to set camera width: {0}", FRAME_WIDTH);
     if(!cap.set(cv::CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT)) console->warn("Failed to set camera height: {0}",  FRAME_HEIGHT);
+}
+
+int main(int argc, char **argv)
+{
+    /* Initialize GPIO pins and camers */
+    if (init() != 0)
+        return -1;
+    
+    /* Store camera frames in a vector */
+    vector<Mat> current_camera_frames(CAMS_NO);
+    
+    /* Video capture instance */
+    VideoCapture cap = NewCameraInstance();
     
     while (true)
     {
-        /* Store camera frames in a vector */
-        static vector<Mat> current_camera_frames(CAMS_NO);
-        
         /* Grab frame and measure time */
         auto t1 = high_resolution_clock::now();
         if (!cap.read( current_camera_frames[current_cam-1] ) )
@@ -275,9 +283,7 @@ int main(int argc, char **argv)
             continue;
         }
         auto t2 = high_resolution_clock::now();
-        console->info("Frame read duration: {0} ms", duration_cast<milliseconds>(t2 - t1).count());
-        
-        //cap.release();
+        console->info("Frame {1} read duration: {0} ms", duration_cast<milliseconds>(t2 - t1).count(),  current_cam);
         
 #ifdef GUI_SUPPORT
         putText(current_camera_frames[current_cam-1], "Cam number: " + to_string(current_cam), cv::Point(30,30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, cv::Scalar(100,100,150), 1, cv::LINE_AA);
@@ -288,9 +294,7 @@ int main(int argc, char **argv)
         select_camera(++current_cam);
         
         if (waitKey(30) == 27)
-        {
             break;
-        }
     }
     return 0;
 }
