@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-g++ main.cpp -o build/camtest \
+g++ -std=c++11 main.cpp -o build/camtest \
 \
 -Iinclude \
 -I/usr/local/include/opencv \

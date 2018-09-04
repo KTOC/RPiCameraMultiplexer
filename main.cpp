@@ -1,11 +1,13 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <vector>
+
 #include <stdint.h>
 #include <bits/stdc++.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <vector>
+#include <unistd.h>
 /* Logger */
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -21,7 +23,7 @@ using namespace chrono;
 using namespace cv;
 
 /* Enable GUI interface */
-//#define GUI_SUPPORT
+// #define GUI_SUPPORT
 /* Window name */
 #define GUI_WINDOW_NAME "Stream"
 /* Maximum FPS */
@@ -295,6 +297,8 @@ int main(int argc, char **argv)
         
         if (waitKey(30) == 27)
             break;
+    
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     return 0;
 }
