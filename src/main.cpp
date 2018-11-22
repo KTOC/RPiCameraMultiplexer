@@ -2,12 +2,15 @@
 #include <thread>
 #include <chrono>
 #include <vector>
-
 #include <stdint.h>
 #include <bits/stdc++.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
+
+/* RPi camera mmap wrapper */
+#include <raspicam/raspicam_cv.h>
+
 /* Logger */
 #include "spdlog/spdlog.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
@@ -107,6 +110,8 @@ static inline void select_camera(int camera)
 			exit(-1);
 		}
 	}
+	
+	this_thread::sleep_for( milliseconds(500) );
 }
 
 static inline void reset_cams()
@@ -129,7 +134,6 @@ int init()
 		console->error("Failed to initialize GPIO pins!");
 		return -1;
 	}
-	
 	/* Config gpio pins as outputs*/
 	pinMode(GPIO_CAM12_EN, OUTPUT);
 	pinMode(GPIO_CAM34_EN, OUTPUT);
@@ -145,25 +149,17 @@ int init()
 	/* Select first camera by default */
 	select_camera(2);
 	
-	/* Init camera driver */
-	console->info("Loading v4l2 kernel module...");
-	system("sudo modprobe -rf bcm2835-v4l2");
-	system("sudo modprobe bcm2835-v4l2");
-	console->info("Starting video stream...");
-	system("sudo v4l2-ctl -d 0 -p 90");
+	/* Wait a short period */
+	this_thread::sleep_for(milliseconds(1000));
 	
-	/* Wait for camera */
-	std::this_thread::sleep_for(milliseconds(100));
-
 //     while(1)
 //     {
-//     	select_camera(current_cam);
+//     	select_camera(++current_cam);
 //     	console->info("current camera: {0}", current_cam);
 //
 //     	cin.get();
-//     	current_cam++;
 //     }
-	
+
 	return 0;
 }
 
@@ -249,34 +245,50 @@ cv::Mat makeCanvas(std::vector<cv::Mat> &vecMat, int windowHeight, int nRows)
 	return canvasImage;
 }
 
-VideoCapture NewCameraInstance()
+raspicam::RaspiCam_Cv NewCameraInstance()
 {
-//    /* Init camera driver */
-//    console->info("Reloading v4l2 kernel module...");
-//    system("sudo modprobe -rf bcm2835-v4l2");
-//    system("sudo modprobe bcm2835-v4l2");
-//    console->info("Starting video stream...");
-//    system("sudo v4l2-ctl -d 0 -p 90");
-//    std::this_thread::sleep_for(milliseconds(50));
-	
-	console->info("Opening video /dev/video{0}", DEVICE_CAMERA_MINOR);
-	VideoCapture cap;
-	if( !cap.open(DEVICE_CAMERA_MINOR) )
-	{
-		console->error("Cannot open camera");
-		return cap;
-	}
+    /* Init camera driver */
+	raspicam::RaspiCam_Cv Camera;
 	
 	/* Capture resolution */
-	if( !cap.set(cv::CAP_PROP_FPS, MAX_FPS) ) console->warn("Failed to set {0} fps", MAX_FPS);
-	if( !cap.set(cv::CAP_PROP_FRAME_WIDTH, FRAME_WIDTH) ) console->warn("Failed to set camera width: {0}", FRAME_WIDTH);
-	if( !cap.set(cv::CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT) ) console->warn("Failed to set camera height: {0}", FRAME_HEIGHT);
+	if( !Camera.set(cv::CAP_PROP_FPS, MAX_FPS) ) console->warn("Failed to set {0} fps", MAX_FPS);
+	if( !Camera.set(cv::CAP_PROP_FRAME_WIDTH, FRAME_WIDTH) ) console->warn("Failed to set camera width: {0}", FRAME_WIDTH);
+	if( !Camera.set(cv::CAP_PROP_FRAME_HEIGHT, FRAME_HEIGHT) ) console->warn("Failed to set camera height: {0}", FRAME_HEIGHT);
+	if( !Camera.set(CAP_PROP_FORMAT, CV_8UC1) ) console->warn("Failed to set prop format: {0}", CV_8UC1);
 	
-	return cap;
+	console->info("Opening Camera...");
+	if( !Camera.open() )
+	{
+		console->warn("Error opening the camera");
+	}
+	else
+	{
+		console->info("Camera successfully opened");
+	}
+	return Camera;
 }
+
+void print_fps()
+{
+	static int frames = 0;
+	static auto t1 = high_resolution_clock::now();
+	static auto t2 = high_resolution_clock::now();
+	
+	frames++;
+	t1 = high_resolution_clock::now();
+	if( duration_cast<milliseconds>(t1 - t2).count() > 1000 )
+	{
+		t2 = t1;
+		console->info("FPS: {0}", frames);
+		frames = 0;
+	}
+}
+
 
 int main(int argc, char **argv)
 {
+	console->set_level(spdlog::level::info);
+	
 	/* Initialize GPIO pins and camers */
 	if( init() != 0 )
 		return -1;
@@ -285,33 +297,22 @@ int main(int argc, char **argv)
 	vector<Mat> current_camera_frames(CAMS_NO);
 	
 	/* Video capture instance */
-	static VideoCapture cap = NewCameraInstance();
+	raspicam::RaspiCam_Cv Camera = NewCameraInstance();
 	
 	while( true )
 	{
-		if(cap.isOpened())
+		if( !Camera.isOpened() )
 		{
-			/* Grab frame and measure time */
-			auto t1 = high_resolution_clock::now();
-			if( !cap.read(current_camera_frames[current_cam - 1]) )
-			{
-				console->error("Cannot read a frame from camera");
-				select_camera(++current_cam);
-				std::this_thread::sleep_for(std::chrono::milliseconds(10));
-				cap = NewCameraInstance();
-				continue;
-			}
-			auto t2 = high_resolution_clock::now();
-			console->info("Frame {1} read duration: {0} ms", duration_cast<milliseconds>(t2 - t1).count(), current_cam);
+			console->error("Cannot read frame! Camera NOT opened");
+			select_camera(++current_cam);
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+			continue;
 		}
 		
-		/* If camera goes in timeout just reset */
-		if( duration_cast<milliseconds>(t2 - t1).count() > 1000 )
-		{
-			console->warn("Camera timeout reached. Reloading driver");
-			cap = NewCameraInstance();
-		}
-
+		Camera.grab();
+		Camera.retrieve(current_camera_frames[current_cam - 1]);
+		console->info("Got frame from {0}", current_cam);
+		
 #ifdef GUI_SUPPORT
 		putText(current_camera_frames[current_cam-1], "Cam number: " + to_string(current_cam), cv::Point(30,30), FONT_HERSHEY_COMPLEX_SMALL, 0.8, cv::Scalar(100,100,150), 1, cv::LINE_AA);
 		Mat displayFrame = makeCanvas(current_camera_frames, 2*FRAME_HEIGHT, 2);
@@ -322,6 +323,9 @@ int main(int argc, char **argv)
 		
 		if( waitKey(30) == 27 )
 			break;
+		
+		/* Print frames at console */
+		print_fps();
 		
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
