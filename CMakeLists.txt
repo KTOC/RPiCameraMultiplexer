@@ -11,10 +11,6 @@ link_directories("/usr/local/lib")
 set(SOURCE_FILES main.cpp)
 add_executable(RPiCameraMultiplexer ${SOURCE_FILES})
 
-#
-# Libs
-#
-
 ### OpenCV
 target_link_libraries(RPiCameraMultiplexer opencv_core)
 target_link_libraries(RPiCameraMultiplexer opencv_imgproc)
